@@ -6,11 +6,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/images")
 public class ImageController {
-    
+
     @Autowired
     private ImageService imageService;
 
@@ -33,5 +35,28 @@ public class ImageController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, image.getContentType())
                 .body(image.getData());
+    }
+
+    @GetMapping("/name/{name}")
+    public ResponseEntity<byte[]> getImageByName(@PathVariable String name) {
+        Image image = imageService.getImageByName(name);
+        if (image == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, image.getContentType())
+                .body(image.getData());
+    }
+
+    @GetMapping
+    public ResponseEntity<String> getAllImages() {
+        List<Image> images = imageService.getAllImages();
+        String csvContent = "id,name,type\n" +
+                images.stream()
+                        .map(img -> String.join(",", img.getId(), img.getName(), img.getContentType()))
+                        .collect(Collectors.joining("\n"));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv")
+                .body(csvContent);
     }
 }
